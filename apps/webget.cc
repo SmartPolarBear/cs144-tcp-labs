@@ -3,8 +3,15 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
+
+template <typename C, typename T>
+static inline basic_ostream<C, T> &httpendl(basic_ostream<C, T> &os) {
+    flush(os.put(os.widen('\r')));
+    return flush(os.put(os.widen('\n')));
+}
 
 void get_URL(const string &host, const string &path) {
     // Your code here.
@@ -13,12 +20,25 @@ void get_URL(const string &host, const string &path) {
     // the computer whose name is in the "host" string,
     // then request the URL path given in the "path" string.
 
+    stringstream req{};
+    req << "GET " << path << " HTTP/1.1" << httpendl;
+    req << "Host: " << host << httpendl;
+    req << "Connection: close" << httpendl;
+    req << httpendl;
+
+    TCPSocket sock{};
+    sock.connect(Address(host, "http"));
+    sock.write(req.str());
+    sock.shutdown(SHUT_WR);
+
     // Then you'll need to print out everything the server sends back,
     // (not just one call to read() -- everything) until you reach
     // the "eof" (end of file).
 
-    cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
-    cerr << "Warning: get_URL() has not been implemented yet.\n";
+    while (!sock.eof()) {
+        cout << sock.read();
+    }
+    sock.close();
 }
 
 int main(int argc, char *argv[]) {
